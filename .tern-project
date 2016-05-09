@@ -1,0 +1,24 @@
+{
+  "ecmaVersion": 6,
+  "libs": [
+    "browser"
+  ],
+  "loadEagerly": [
+    "var/www/html/hyperbolic_tiling/es2015/**/*.js"
+  ],
+  "dontLoad": [
+   "var/www/html/hyperbolic_tiling/node_modules/**/*.js"
+ ],
+  "plugins": {
+    "complete_strings": {},
+    "node": {},
+    "lint": {},
+    "angular": {},
+    "requirejs": {},
+    "modules": {},
+    "es_modules": {},
+    "doc_comment": {
+      "fullDocs": true
+    }
+  }
+}
