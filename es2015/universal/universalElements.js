@@ -40,8 +40,23 @@ export class Point {
 // *************************************************************************
 
 export class Circle {
-  constructor(centreX, centreY, radius) {
-    this.centre = new Point(centreX, centreY);
+  constructor(centre, radius) {
+    this.centre = centre;
     this.radius = radius;
+  }
+
+  compare(otherCircle) {
+    if (typeof otherCircle === 'undefined') {
+      console.warn('Compare Points: point not defined.');
+      return false;
+    }
+    const a = this.centre.compare(otherCircle.centre);
+    const b = E.toFixed(this.radius) === E.toFixed(otherCircle.radius);
+    if (a && b) return true;
+    return false;
+  }
+
+  clone() {
+    return new Circle(this.centre, this.radius);
   }
 }

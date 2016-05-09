@@ -1,10 +1,10 @@
 //import * as E from './universal/mathFunctions';
-//import { Point } from './universal/universalElements';
+//import { Point, Circle } from './universal/universalElements';
 // * ***********************************************************************
 // *
 // *  RENDERER CLASS
 // *
-// *  All operations involved in drawing to the screen occur here.
+// *  Controller for THREE.js
 // *************************************************************************
 export class Renderer {
   constructor(renderElem) {
@@ -67,16 +67,16 @@ export class Renderer {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
   }
 
-  disk(centre, radius, color) {
+  disk(circle, color) {
     if (color === undefined) color = 0xffffff;
-    const geometry = new THREE.CircleGeometry(radius * this.radius, 100, 0, 2 * Math.PI);
+    const geometry = new THREE.CircleGeometry(circle.radius, 100, 0, 2 * Math.PI);
     const material = new THREE.MeshBasicMaterial({ color });
 
-    const circle = new THREE.Mesh(geometry, material);
-    circle.position.x = centre.x;
-    circle.position.y = centre.y;
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.position.x = circle.centre.x;
+    mesh.position.y = circle.centre.y;
 
-    this.scene.add(circle);
+    this.scene.add(mesh);
   }
 
   //NOTE: some polygons are inverted due to vertex order,

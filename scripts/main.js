@@ -9,12 +9,12 @@ babelHelpers.classCallCheck = function (instance, Constructor) {
 babelHelpers;
 
 //import * as E from './universal/mathFunctions';
-//import { Point } from './universal/universalElements';
+//import { Point, Circle } from './universal/universalElements';
 // * ***********************************************************************
 // *
 // *  RENDERER CLASS
 // *
-// *  All operations involved in drawing to the screen occur here.
+// *  Controller for THREE.js
 // *************************************************************************
 var Renderer = function () {
   function Renderer(renderElem) {
@@ -78,16 +78,16 @@ var Renderer = function () {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
   };
 
-  Renderer.prototype.disk = function disk(centre, radius, color) {
+  Renderer.prototype.disk = function disk(circle, color) {
     if (color === undefined) color = 0xffffff;
-    var geometry = new THREE.CircleGeometry(radius * this.radius, 100, 0, 2 * Math.PI);
+    var geometry = new THREE.CircleGeometry(circle.radius, 100, 0, 2 * Math.PI);
     var material = new THREE.MeshBasicMaterial({ color: color });
 
-    var circle = new THREE.Mesh(geometry, material);
-    circle.position.x = centre.x;
-    circle.position.y = centre.y;
+    var mesh = new THREE.Mesh(geometry, material);
+    mesh.position.x = circle.centre.x;
+    mesh.position.y = circle.centre.y;
 
-    this.scene.add(circle);
+    this.scene.add(mesh);
   };
 
   //NOTE: some polygons are inverted due to vertex order,
@@ -273,6 +273,117 @@ var LayoutController = function () {
 
 // * ***********************************************************************
 // *
+// *   POINT CLASS
+// *   Represents a 2D or 3D point with functions to apply transforms and
+// *   convert between hyperbolid space and the Poincare disk
+// *************************************************************************
+
+var Point = function () {
+  function Point(x, y) {
+    var z = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
+    babelHelpers.classCallCheck(this, Point);
+
+    this.x = x;
+    this.y = y;
+    this.z = z;
+  }
+
+  //compare two points taking rounding errors into account
+
+
+  Point.prototype.compare = function compare(otherPoint) {
+    if (typeof otherPoint === 'undefined') {
+      console.warn('Compare Points: point not defined.');
+      return false;
+    }
+    var a = toFixed(this.x) === toFixed(otherPoint.x);
+    var b = toFixed(this.y) === toFixed(otherPoint.y);
+    var c = toFixed(this.z) === toFixed(otherPoint.z);
+    if (a && b && c) return true;
+    return false;
+  };
+
+  Point.prototype.clone = function clone() {
+    return new Point(this.x, this.y);
+  };
+
+  return Point;
+}();
+
+// * ***********************************************************************
+// *
+// *   CIRCLE CLASS
+// *   A circle in the Poincare disk is identical to a circle in Euclidean space
+// *
+// *************************************************************************
+
+var Circle = function () {
+  function Circle(centre, radius) {
+    babelHelpers.classCallCheck(this, Circle);
+
+    this.centre = centre;
+    this.radius = radius;
+  }
+
+  Circle.prototype.compare = function compare(otherCircle) {
+    if (typeof otherCircle === 'undefined') {
+      console.warn('Compare Points: point not defined.');
+      return false;
+    }
+    var a = this.centre.compare(otherCircle.centre);
+    var b = toFixed(this.radius) === toFixed(otherCircle.radius);
+    if (a && b) return true;
+    return false;
+  };
+
+  Circle.prototype.clone = function clone() {
+    return new Circle(this.centre, this.radius);
+  };
+
+  return Circle;
+}();
+
+// * ***********************************************************************
+// *
+// *   MATH FUNCTIONS
+// *
+// *************************************************************************
+
+//.toFixed returns a string for some no doubt very good reason.
+//apply to fixed with default value of 10 and return as a float
+var toFixed = function (number) {
+  var places = arguments.length <= 1 || arguments[1] === undefined ? 10 : arguments[1];
+  return parseFloat(number.toFixed(places));
+};
+
+// * ***********************************************************************
+// *
+// *  DRAWING CLASS
+// *
+// *  Here we will create some pretty things
+// *
+// *************************************************************************
+
+var Drawing = function () {
+  function Drawing(renderer) {
+    babelHelpers.classCallCheck(this, Drawing);
+
+    this.renderer = renderer;
+    this.test();
+  }
+
+  Drawing.prototype.test = function test() {
+    var centre = new Point(0, 0);
+    var circle = new Circle(centre, 100);
+    console.log(circle);
+    this.renderer.disk(circle);
+  };
+
+  return Drawing;
+}();
+
+// * ***********************************************************************
+// *
 // *  CONTROLLER CLASS
 // *
 // *************************************************************************
@@ -284,6 +395,7 @@ var Controller = function () {
     this.renderer = new Renderer();
 
     //document.querySelector('#canvas') //NOT WORKING!!
+    this.drawing = new Drawing(this.renderer);
     this.init();
   }
 

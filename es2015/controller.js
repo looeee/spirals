@@ -7,6 +7,10 @@ import {
 }
 from './layout';
 
+import {
+  Drawing,
+}
+from './drawing';
 // * ***********************************************************************
 // *
 // *  CONTROLLER CLASS
@@ -18,6 +22,7 @@ export class Controller {
     this.renderer = new Renderer(
       //document.querySelector('#canvas') //NOT WORKING!!
     );
+    this.drawing = new Drawing(this.renderer);
     this.init();
   }
 
