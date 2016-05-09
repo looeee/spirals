@@ -1,5 +1,3 @@
-/* mathFunctions.js */
-
 import {
   Circle, Point,
 }
@@ -116,4 +114,3 @@ export const identityMatrix = (n) =>
       return (i === k) ? 1 : 0;
     })
   );
-  

@@ -1,9 +1,7 @@
-/* controller.js */
-
 import {
-  Drawing,
+  Render,
 }
-from './drawing';
+from './render';
 import {
   LayoutController as Layout,
 }
@@ -17,7 +15,7 @@ from './layout';
 export class Controller {
   constructor() {
     this.layout = new Layout();
-    this.draw = new Drawing();
+    this.render = new Render();
   }
 
   onResize() {

@@ -4,7 +4,7 @@
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-    <meta name="description" content="EscherSketch - Create Hyperbolic Tilings">
+    <meta name="description" content="3D Playground">
 
     <title>3D Playground</title>
 
@@ -21,8 +21,10 @@
 
   <body>
     <div id="title">
-      <h1>3D Playground</h1>
+      <h1></h1>
     </div>
+
+    <div id="content"></div>
 
   </body>
 

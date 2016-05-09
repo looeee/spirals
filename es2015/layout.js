@@ -1,6 +1,3 @@
-/* layout.js */
-
-
 // * ***********************************************************************
 // *
 // *  LAYOUT CONTROLLER CLASS
@@ -24,7 +21,7 @@ export class LayoutController {
   bottomPanel() {
 
   }
-  
+
   hideElements(...elements) {
     for (const element of elements) {
       document.querySelector(element).classList.add('hide');

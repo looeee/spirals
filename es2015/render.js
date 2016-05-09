@@ -1,5 +1,3 @@
-/* drawing.js */
-
 import * as E from './universal/mathFunctions';
 import { Point } from './universal/universalElements';
 // * ***********************************************************************
@@ -7,12 +5,9 @@ import { Point } from './universal/universalElements';
 // *  DRAWING CLASS
 // *
 // *  All operations involved in drawing to the screen occur here.
-// *  All objects are assumed to be on the unit Disk when passed here and
-// *  are converted to screen space (which involves multiplying
-// *  by the radius ~ half screen resolution)
 // *************************************************************************
-export class Drawing {
-  constructor(radius) {
+export class Render {
+  constructor() {
     this.init();
   }
 
@@ -21,9 +16,6 @@ export class Drawing {
     this.initCamera();
     this.initRenderer();
   }
-
-  set radius(newRadius) {this._radius = newRadius;}
-  get radius() {return this._radius;}
 
   reset() {
     this.clearScene();
@@ -79,91 +71,10 @@ export class Drawing {
     const material = new THREE.MeshBasicMaterial({ color });
 
     const circle = new THREE.Mesh(geometry, material);
-    circle.position.x = centre.x * this.radius;
-    circle.position.y = centre.y * this.radius;
+    circle.position.x = centre.x;
+    circle.position.y = centre.y;
 
     this.scene.add(circle);
-  }
-
-  //TODO: passing elem param through lots of function to eventually get to renderToImageElem
-  // which is called after final texture has loaded. There must be a better way!
-  polygonArray(array, textureArray, color, wireframe, elem) {
-    color = color || 0xffffff;
-    wireframe = wireframe || false;
-    for (let i = 0; i < array.length; i++) {
-      this.polygon(array[i], color, textureArray, wireframe, elem);
-    }
-  }
-
-  //Note: polygons assumed to be triangular
-  polygon(polygon, color, textures, wireframe, elem) {
-    const divisions = polygon.numDivisions || 1;
-    const p = 1 / divisions;
-    const geometry = new THREE.Geometry();
-    geometry.faceVertexUvs[0] = [];
-
-    if (polygon.needsResizing) {
-      for (let i = 0; i < polygon.mesh.length; i++) {
-        geometry.vertices.push(
-          new Point(polygon.mesh[i].x * this.radius, polygon.mesh[i].y * this.radius)
-        );
-      }
-    }
-    else {
-      geometry.vertices = polygon.mesh;
-    }
-
-
-    let edgeStartingVertex = 0;
-    //loop over each interior edge of the polygon's subdivion mesh
-    for (let i = 0; i < divisions; i++) {
-      //edge divisions reduce by one for each interior edge
-      const m = divisions - i + 1;
-      geometry.faces.push(
-        new THREE.Face3(
-          edgeStartingVertex,
-          edgeStartingVertex + m,
-          edgeStartingVertex + 1
-        ));
-      geometry.faceVertexUvs[0].push(
-        [
-          new Point(i * p, 0),
-          new Point((i + 1) * p, 0),
-          new Point((i + 1) * p, p),
-        ]);
-
-      //range m-2 because we are ignoring the edges first vertex which was
-      //used in the previous faces.push
-      for (let j = 0; j < m - 2; j++) {
-        geometry.faces.push(
-          new THREE.Face3(
-            edgeStartingVertex + j + 1,
-            edgeStartingVertex + m + j,
-            edgeStartingVertex + m + 1 + j
-          ));
-        geometry.faceVertexUvs[0].push(
-          [
-            new Point((i + 1 + j) * p, (1 + j) * p),
-            new Point((i + 1 + j) * p, j * p),
-            new Point((i + j + 2) * p, (j + 1) * p),
-          ]);
-        geometry.faces.push(
-          new THREE.Face3(
-            edgeStartingVertex + j + 1,
-            edgeStartingVertex + m + 1 + j,
-            edgeStartingVertex + j + 2
-          ));
-        geometry.faceVertexUvs[0].push(
-          [
-            new Point((i + 1 + j) * p, (1 + j) * p),
-            new Point((i + 2 + j) * p, (j + 1) * p),
-            new Point((i + j + 2) * p, (j + 2) * p),
-          ]);
-      }
-      edgeStartingVertex += m;
-    }
-    const mesh = this.createMesh(geometry, color, textures, polygon.materialIndex, wireframe, elem);
-    this.scene.add(mesh);
   }
 
   //NOTE: some polygons are inverted due to vertex order,
@@ -176,31 +87,6 @@ export class Drawing {
       this.createPattern(color, textures, wireframe, elem);
     }
     return new THREE.Mesh(geometry, this.pattern.materials[materialIndex]);
-  }
-
-  createPattern(color, textures, wireframe, elem) {
-    this.pattern = new THREE.MultiMaterial();
-    const texturesLoaded = [];
-
-    for (let i = 0; i < textures.length; i++) {
-      const material = new THREE.MeshBasicMaterial({
-        color,
-        wireframe,
-        side: THREE.DoubleSide,
-      });
-
-      const texture = new THREE.TextureLoader().load(textures[i],
-        () => {
-          texturesLoaded.push(i);
-          //call render when all textures are loaded
-          if (texturesLoaded.length === textures.length) {
-            this.renderToImageElem(elem);
-          }
-        });
-
-      material.map = texture;
-      this.pattern.materials.push(material);
-    }
   }
 
   //render to image elem
@@ -229,15 +115,17 @@ export class Drawing {
     xhttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
     xhttp.send(`img=${data}`);
   }
+
+  addBoundingBoxHelper(mesh) {
+    const box = new THREE.BoxHelper(mesh);
+    //box.update();
+    this.scene.add(box);
+  }
+
 }
 
 /* UNUSED FUNCTIONS
 
-addBoundingBoxHelper(mesh) {
-  const box = new THREE.BoxHelper(mesh);
-  //box.update();
-  this.scene.add(box);
-}
 
   segment(circle, startAngle, endAngle, color) {
     if (color === undefined) color = 0xffffff;

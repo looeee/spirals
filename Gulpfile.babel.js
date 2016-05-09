@@ -1,4 +1,4 @@
-const projectname = 'hyperbolic-tiling';
+const projectname = '3d-playground';
 const templatePath = '';
 const scssPath = `${templatePath}scss/**/*.scss`;
 const es2015Path = `${templatePath}es2015/`;
