@@ -1,7 +1,7 @@
 import {
-  Render,
+  Renderer,
 }
-from './render';
+from './renderer';
 import {
   LayoutController as Layout,
 }
@@ -15,14 +15,22 @@ from './layout';
 export class Controller {
   constructor() {
     this.layout = new Layout();
-    this.render = new Render();
+    this.renderer = new Renderer(
+      //document.querySelector('#canvas') //NOT WORKING!!
+    );
+    this.init();
+  }
+
+  init() {
+    this.renderer.render();
   }
 
   onResize() {
   }
 
+  //to use this add buttons with the classes below
   saveImageButtons() {
-    document.querySelector('#save-image').onclick = () => this.draw.saveImage();
-    document.querySelector('#download-image').onclick = () => this.draw.downloadImage();
+    document.querySelector('#save-image').onclick = () => this.render.saveImage();
+    document.querySelector('#download-image').onclick = () => this.render.downloadImage();
   }
 }

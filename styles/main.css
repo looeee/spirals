@@ -65,5 +65,14 @@ button.selected {
   top: 25px;
   left: 300px; }
 
+.fullscreen {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%; }
+
 .hide {
   display: none !important; }

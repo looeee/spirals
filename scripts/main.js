@@ -8,33 +8,31 @@ babelHelpers.classCallCheck = function (instance, Constructor) {
 
 babelHelpers;
 
+//import * as E from './universal/mathFunctions';
+//import { Point } from './universal/universalElements';
 // * ***********************************************************************
 // *
-// *  DRAWING CLASS
+// *  RENDERER CLASS
 // *
 // *  All operations involved in drawing to the screen occur here.
 // *************************************************************************
-var Render = function () {
-  function Render() {
-    babelHelpers.classCallCheck(this, Render);
+var Renderer = function () {
+  function Renderer(renderElem) {
+    babelHelpers.classCallCheck(this, Renderer);
 
-    this.init();
-  }
-
-  Render.prototype.init = function init() {
     this.scene = new THREE.Scene();
     this.initCamera();
-    this.initRenderer();
-  };
+    this.initRenderer(renderElem);
+  }
 
-  Render.prototype.reset = function reset() {
+  Renderer.prototype.reset = function reset() {
     this.clearScene();
     this.pattern = null; //reset materials;
     this.setCamera();
     this.setRenderer();
   };
 
-  Render.prototype.clearScene = function clearScene() {
+  Renderer.prototype.clearScene = function clearScene() {
     for (var i = this.scene.children.length - 1; i >= 0; i--) {
       var object = this.scene.children[i];
       if (object.type === 'Mesh') {
@@ -45,13 +43,13 @@ var Render = function () {
     }
   };
 
-  Render.prototype.initCamera = function initCamera() {
+  Renderer.prototype.initCamera = function initCamera() {
     this.camera = new THREE.OrthographicCamera();
     this.setCamera();
     this.scene.add(this.camera);
   };
 
-  Render.prototype.setCamera = function setCamera() {
+  Renderer.prototype.setCamera = function setCamera() {
     this.camera.left = -window.innerWidth / 2;
     this.camera.right = window.innerWidth / 2;
     this.camera.top = window.innerHeight / 2;
@@ -62,20 +60,25 @@ var Render = function () {
     this.camera.updateProjectionMatrix();
   };
 
-  Render.prototype.initRenderer = function initRenderer() {
+  Renderer.prototype.initRenderer = function initRenderer(renderElem) {
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
       preserveDrawingBuffer: true
     });
+    if (renderElem) {
+      this.renderer.domElement = renderElem;
+    } else {
+      document.body.appendChild(this.renderer.domElement);
+    }
     this.setRenderer();
   };
 
-  Render.prototype.setRenderer = function setRenderer() {
-    this.renderer.setClearColor(0xffffff, 1.0);
+  Renderer.prototype.setRenderer = function setRenderer() {
+    this.renderer.setClearColor(0x000000, 1.0);
     this.renderer.setSize(window.innerWidth, window.innerHeight);
   };
 
-  Render.prototype.disk = function disk(centre, radius, color) {
+  Renderer.prototype.disk = function disk(centre, radius, color) {
     if (color === undefined) color = 0xffffff;
     var geometry = new THREE.CircleGeometry(radius * this.radius, 100, 0, 2 * Math.PI);
     var material = new THREE.MeshBasicMaterial({ color: color });
@@ -91,7 +94,7 @@ var Render = function () {
   //solved this by making material doubles sided
 
 
-  Render.prototype.createMesh = function createMesh(geometry, color, textures, materialIndex, wireframe, elem) {
+  Renderer.prototype.createMesh = function createMesh(geometry, color, textures, materialIndex, wireframe, elem) {
     if (wireframe === undefined) wireframe = false;
     if (color === undefined) color = 0xffffff;
 
@@ -104,20 +107,23 @@ var Render = function () {
   //render to image elem
 
 
-  Render.prototype.renderToImageElem = function renderToImageElem(elem) {
+  Renderer.prototype.renderToImageElem = function renderToImageElem(elem) {
     this.renderer.render(this.scene, this.camera);
     this.appendImageToDom(elem);
     this.clearScene();
   };
 
-  Render.prototype.appendImageToDom = function appendImageToDom(elem) {
+  //allows drawing of the image once adding this image to DOM elem
+
+
+  Renderer.prototype.appendImageToDom = function appendImageToDom(elem) {
     document.querySelector(elem).setAttribute('src', this.renderer.domElement.toDataURL());
   };
 
   //Download the canvas as a png image
 
 
-  Render.prototype.downloadImage = function downloadImage() {
+  Renderer.prototype.downloadImage = function downloadImage() {
     var link = document.querySelector('#download-image');
     link.href = this.renderer.domElement.toDataURL();
     link.download = 'hyperbolic-tiling.png';
@@ -126,7 +132,7 @@ var Render = function () {
   //convert the canvas to a base64URL and send to saveImage.php
 
 
-  Render.prototype.saveImage = function saveImage() {
+  Renderer.prototype.saveImage = function saveImage() {
     var data = this.renderer.domElement.toDataURL();
     var xhttp = new XMLHttpRequest();
     xhttp.open('POST', 'saveImage.php', true);
@@ -134,13 +140,22 @@ var Render = function () {
     xhttp.send('img=' + data);
   };
 
-  Render.prototype.addBoundingBoxHelper = function addBoundingBoxHelper(mesh) {
+  Renderer.prototype.addBoundingBoxHelper = function addBoundingBoxHelper(mesh) {
     var box = new THREE.BoxHelper(mesh);
     //box.update();
     this.scene.add(box);
   };
 
-  return Render;
+  Renderer.prototype.render = function render() {
+    var _this = this;
+
+    window.requestAnimationFrame(function () {
+      return _this.render();
+    });
+    this.renderer.render(this.scene, this.camera);
+  };
+
+  return Renderer;
 }();
 
 /* UNUSED FUNCTIONS
@@ -198,7 +213,6 @@ var LayoutController = function () {
   function LayoutController() {
     babelHelpers.classCallCheck(this, LayoutController);
 
-    this.topPanel = new TopPanel();
     this.setupLayout();
   }
 
@@ -267,19 +281,29 @@ var Controller = function () {
     babelHelpers.classCallCheck(this, Controller);
 
     this.layout = new LayoutController();
-    this.render = new Render();
+    this.renderer = new Renderer();
+
+    //document.querySelector('#canvas') //NOT WORKING!!
+    this.init();
   }
 
+  Controller.prototype.init = function init() {
+    this.renderer.render();
+  };
+
   Controller.prototype.onResize = function onResize() {};
+
+  //to use this add buttons with the classes below
+
 
   Controller.prototype.saveImageButtons = function saveImageButtons() {
     var _this = this;
 
     document.querySelector('#save-image').onclick = function () {
-      return _this.draw.saveImage();
+      return _this.render.saveImage();
     };
     document.querySelector('#download-image').onclick = function () {
-      return _this.draw.downloadImage();
+      return _this.render.downloadImage();
     };
   };
 

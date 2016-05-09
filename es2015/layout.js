@@ -6,7 +6,6 @@
 // *************************************************************************
 export class LayoutController {
   constructor() {
-    this.topPanel = new TopPanel();
     this.setupLayout();
   }
 

@@ -1,20 +1,16 @@
-import * as E from './universal/mathFunctions';
-import { Point } from './universal/universalElements';
+//import * as E from './universal/mathFunctions';
+//import { Point } from './universal/universalElements';
 // * ***********************************************************************
 // *
-// *  DRAWING CLASS
+// *  RENDERER CLASS
 // *
 // *  All operations involved in drawing to the screen occur here.
 // *************************************************************************
-export class Render {
-  constructor() {
-    this.init();
-  }
-
-  init() {
+export class Renderer {
+  constructor(renderElem) {
     this.scene = new THREE.Scene();
     this.initCamera();
-    this.initRenderer();
+    this.initRenderer(renderElem);
   }
 
   reset() {
@@ -52,16 +48,22 @@ export class Render {
     this.camera.updateProjectionMatrix();
   }
 
-  initRenderer() {
+  initRenderer(renderElem) {
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
       preserveDrawingBuffer: true,
     });
+    if (renderElem) {
+      this.renderer.domElement = renderElem;
+    }
+    else {
+      document.body.appendChild(this.renderer.domElement);
+    }
     this.setRenderer();
   }
 
   setRenderer() {
-    this.renderer.setClearColor(0xffffff, 1.0);
+    this.renderer.setClearColor(0x000000, 1.0);
     this.renderer.setSize(window.innerWidth, window.innerHeight);
   }
 
@@ -96,6 +98,7 @@ export class Render {
     this.clearScene();
   }
 
+  //allows drawing of the image once adding this image to DOM elem
   appendImageToDom(elem) {
     document.querySelector(elem).setAttribute('src', this.renderer.domElement.toDataURL());
   }
@@ -122,6 +125,10 @@ export class Render {
     this.scene.add(box);
   }
 
+  render() {
+    window.requestAnimationFrame(() => this.render());
+    this.renderer.render(this.scene, this.camera);
+  }
 }
 
 /* UNUSED FUNCTIONS
