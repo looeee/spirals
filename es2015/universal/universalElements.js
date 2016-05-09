@@ -47,7 +47,7 @@ export class Circle {
 
   compare(otherCircle) {
     if (typeof otherCircle === 'undefined') {
-      console.warn('Compare Points: point not defined.');
+      console.warn('Compare Circles: circle not defined.');
       return false;
     }
     const a = this.centre.compare(otherCircle.centre);

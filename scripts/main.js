@@ -23,6 +23,7 @@ var Renderer = function () {
     this.scene = new THREE.Scene();
     this.initCamera();
     this.initRenderer(renderElem);
+    this.showStats();
   }
 
   Renderer.prototype.reset = function reset() {
@@ -146,12 +147,22 @@ var Renderer = function () {
     this.scene.add(box);
   };
 
+  //include https://github.com/mrdoob/stats.js/blob/master/build/stats.min.js
+
+
+  Renderer.prototype.showStats = function showStats() {
+    this.stats = new Stats();
+    this.stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
+    document.body.appendChild(this.stats.dom);
+  };
+
   Renderer.prototype.render = function render() {
     var _this = this;
 
     window.requestAnimationFrame(function () {
       return _this.render();
     });
+    if (this.stats) this.stats.update();
     this.renderer.render(this.scene, this.camera);
   };
 
@@ -327,7 +338,7 @@ var Circle = function () {
 
   Circle.prototype.compare = function compare(otherCircle) {
     if (typeof otherCircle === 'undefined') {
-      console.warn('Compare Points: point not defined.');
+      console.warn('Compare Circles: circle not defined.');
       return false;
     }
     var a = this.centre.compare(otherCircle.centre);
@@ -375,7 +386,6 @@ var Drawing = function () {
   Drawing.prototype.test = function test() {
     var centre = new Point(0, 0);
     var circle = new Circle(centre, 100);
-    console.log(circle);
     this.renderer.disk(circle);
   };
 

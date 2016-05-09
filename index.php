@@ -17,7 +17,7 @@
     <script src="node_modules/whatwg-fetch/fetch.js"></script>
     -->
     <script src="node_modules/three/three.js"></script>
-
+    <script src="scripts/vendor/stats.min.js"></script>
 
 
   </head>

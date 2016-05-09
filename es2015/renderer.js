@@ -11,6 +11,7 @@ export class Renderer {
     this.scene = new THREE.Scene();
     this.initCamera();
     this.initRenderer(renderElem);
+    this.showStats();
   }
 
   reset() {
@@ -125,8 +126,16 @@ export class Renderer {
     this.scene.add(box);
   }
 
+  //include https://github.com/mrdoob/stats.js/blob/master/build/stats.min.js
+  showStats() {
+    this.stats = new Stats();
+    this.stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
+    document.body.appendChild(this.stats.dom);
+  }
+
   render() {
     window.requestAnimationFrame(() => this.render());
+    if (this.stats) this.stats.update();
     this.renderer.render(this.scene, this.camera);
   }
 }

@@ -18,7 +18,6 @@ export class Drawing {
   test() {
     const centre = new Point(0, 0);
     const circle = new Circle(centre, 100);
-    console.log(circle);
     this.renderer.disk(circle);
   }
 }
