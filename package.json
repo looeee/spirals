@@ -1,7 +1,7 @@
 {
-  "name": "3d-playground",
+  "name": "Spirals",
   "version": "1.0.0",
-  "description": "3d Playground",
+  "description": "Spirals",
   "main": "Gulpfile.js",
   "dependencies": {
     "lodash.throttle": "^4.0.1",
@@ -33,12 +33,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/looeee/hyperbolic-tiling.git"
+    "url": "git+https://github.com/looeee/spirals.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/looeee/3d-playground/issues"
+    "url": "https://github.com/looeee/spirals/issues"
   },
-  "homepage": "https://github.com/looeee/3d-playground#readme"
+  "homepage": "https://github.com/looeee/spirals#readme"
 }

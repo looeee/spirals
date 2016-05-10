@@ -6,10 +6,35 @@ babelHelpers.classCallCheck = function (instance, Constructor) {
   }
 };
 
+babelHelpers.inherits = function (subClass, superClass) {
+  if (typeof superClass !== "function" && superClass !== null) {
+    throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
+  }
+
+  subClass.prototype = Object.create(superClass && superClass.prototype, {
+    constructor: {
+      value: subClass,
+      enumerable: false,
+      writable: true,
+      configurable: true
+    }
+  });
+  if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
+};
+
+babelHelpers.possibleConstructorReturn = function (self, call) {
+  if (!self) {
+    throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
+  }
+
+  return call && (typeof call === "object" || typeof call === "function") ? call : self;
+};
+
 babelHelpers;
 
 //import * as E from './universal/mathFunctions';
 //import { Point, Circle } from './universal/universalElements';
+
 // * ***********************************************************************
 // *
 // *  RENDERER CLASS
@@ -24,13 +49,28 @@ var Renderer = function () {
     this.initCamera();
     this.initRenderer(renderElem);
     this.showStats();
+    this.resize();
   }
+
+  Renderer.prototype.add = function add(mesh) {
+    this.scene.add(mesh);
+  };
 
   Renderer.prototype.reset = function reset() {
     this.clearScene();
     this.pattern = null; //reset materials;
     this.setCamera();
     this.setRenderer();
+  };
+
+  Renderer.prototype.resize = function resize() {
+    var _this = this;
+
+    window.addEventListener('resize', function () {
+      _this.renderer.setSize(window.innerWidth, window.innerHeight);
+      _this.camera.aspect = window.innerWidth / window.innerHeight;
+      _this.camera.updateProjectionMatrix();
+    }, false);
   };
 
   Renderer.prototype.clearScene = function clearScene() {
@@ -77,32 +117,6 @@ var Renderer = function () {
   Renderer.prototype.setRenderer = function setRenderer() {
     this.renderer.setClearColor(0x000000, 1.0);
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-  };
-
-  Renderer.prototype.disk = function disk(circle, color) {
-    if (color === undefined) color = 0xffffff;
-    var geometry = new THREE.CircleGeometry(circle.radius, 100, 0, 2 * Math.PI);
-    var material = new THREE.MeshBasicMaterial({ color: color });
-
-    var mesh = new THREE.Mesh(geometry, material);
-    mesh.position.x = circle.centre.x;
-    mesh.position.y = circle.centre.y;
-
-    this.scene.add(mesh);
-  };
-
-  //NOTE: some polygons are inverted due to vertex order,
-  //solved this by making material doubles sided
-
-
-  Renderer.prototype.createMesh = function createMesh(geometry, color, textures, materialIndex, wireframe, elem) {
-    if (wireframe === undefined) wireframe = false;
-    if (color === undefined) color = 0xffffff;
-
-    if (!this.pattern) {
-      this.createPattern(color, textures, wireframe, elem);
-    }
-    return new THREE.Mesh(geometry, this.pattern.materials[materialIndex]);
   };
 
   //render to image elem
@@ -157,10 +171,10 @@ var Renderer = function () {
   };
 
   Renderer.prototype.render = function render() {
-    var _this = this;
+    var _this2 = this;
 
     window.requestAnimationFrame(function () {
-      return _this.render();
+      return _this2.render();
     });
     if (this.stats) this.stats.update();
     this.renderer.render(this.scene, this.camera);
@@ -170,6 +184,11 @@ var Renderer = function () {
 }();
 
 /* UNUSED FUNCTIONS
+  createMesh(geometry, color, textures, materialIndex, wireframe, elem) {
+    if (wireframe === undefined) wireframe = false;
+    if (color === undefined) color = 0xffffff;
+    return new THREE.Mesh(geometry, this.pattern.materials[materialIndex]);
+  }
 
 
   segment(circle, startAngle, endAngle, color) {
@@ -282,90 +301,245 @@ var LayoutController = function () {
   return LayoutController;
 }();
 
-// * ***********************************************************************
-// *
-// *   POINT CLASS
-// *   Represents a 2D or 3D point with functions to apply transforms and
-// *   convert between hyperbolid space and the Poincare disk
-// *************************************************************************
-
-var Point = function () {
-  function Point(x, y) {
-    var z = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
-    babelHelpers.classCallCheck(this, Point);
-
-    this.x = x;
-    this.y = y;
-    this.z = z;
-  }
-
-  //compare two points taking rounding errors into account
-
-
-  Point.prototype.compare = function compare(otherPoint) {
-    if (typeof otherPoint === 'undefined') {
-      console.warn('Compare Points: point not defined.');
-      return false;
-    }
-    var a = toFixed(this.x) === toFixed(otherPoint.x);
-    var b = toFixed(this.y) === toFixed(otherPoint.y);
-    var c = toFixed(this.z) === toFixed(otherPoint.z);
-    if (a && b && c) return true;
-    return false;
-  };
-
-  Point.prototype.clone = function clone() {
-    return new Point(this.x, this.y);
-  };
-
-  return Point;
-}();
-
-// * ***********************************************************************
-// *
-// *   CIRCLE CLASS
-// *   A circle in the Poincare disk is identical to a circle in Euclidean space
-// *
-// *************************************************************************
-
-var Circle = function () {
-  function Circle(centre, radius) {
-    babelHelpers.classCallCheck(this, Circle);
-
-    this.centre = centre;
-    this.radius = radius;
-  }
-
-  Circle.prototype.compare = function compare(otherCircle) {
-    if (typeof otherCircle === 'undefined') {
-      console.warn('Compare Circles: circle not defined.');
-      return false;
-    }
-    var a = this.centre.compare(otherCircle.centre);
-    var b = toFixed(this.radius) === toFixed(otherCircle.radius);
-    if (a && b) return true;
-    return false;
-  };
-
-  Circle.prototype.clone = function clone() {
-    return new Circle(this.centre, this.radius);
-  };
-
-  return Circle;
-}();
-
-// * ***********************************************************************
-// *
-// *   MATH FUNCTIONS
-// *
-// *************************************************************************
-
-//.toFixed returns a string for some no doubt very good reason.
-//apply to fixed with default value of 10 and return as a float
-var toFixed = function (number) {
-  var places = arguments.length <= 1 || arguments[1] === undefined ? 10 : arguments[1];
-  return parseFloat(number.toFixed(places));
+//The following three functions convert values from percentages starting at
+//(0,0) bottom left to (100,100) top right screen coords
+var xPercent = window.innerWidth / 100;
+var yPercent = window.innerHeight / 100;
+var xCoord = function (x) {
+  return x < 50 ? (-50 + x) * xPercent : (x - 50) * xPercent;
 };
+var yCoord = function (y) {
+  return y < 50 ? (-50 + y) * yPercent : (y - 50) * yPercent;
+};
+
+// * ***********************************************************************
+// *
+// *  OBJECTS SUPERCLASS
+// *
+// *************************************************************************
+
+var Objects = function () {
+  function Objects(spec) {
+    babelHelpers.classCallCheck(this, Objects);
+
+    spec.color = spec.color || 0xffffff;
+  }
+
+  Objects.prototype.createMeshMaterial = function createMeshMaterial(color) {
+    return new THREE.MeshBasicMaterial({
+      color: color
+    });
+  };
+
+  Objects.prototype.createLineMaterial = function createLineMaterial(color) {
+    return new THREE.LineBasicMaterial({
+      color: color
+    });
+  };
+
+  Objects.prototype.createMesh = function createMesh(x, y, geometry, material) {
+    var mesh = new THREE.Mesh(geometry, material);
+    mesh.position.x = x;
+    mesh.position.y = y;
+    return mesh;
+  };
+
+  return Objects;
+}();
+
+// * ***********************************************************************
+// *
+// *  DISK CLASSES
+// *
+// *************************************************************************
+// spec = {
+//   radius,
+//   color,
+//   x,
+//   y
+// }
+
+
+var Disk = function (_Objects) {
+  babelHelpers.inherits(Disk, _Objects);
+
+  function Disk(spec) {
+    var _ret;
+
+    babelHelpers.classCallCheck(this, Disk);
+
+    var _this = babelHelpers.possibleConstructorReturn(this, _Objects.call(this, spec));
+
+    var geometry = new THREE.CircleGeometry(spec.radius, 100, 0, 2 * Math.PI);
+    var material = _this.createMeshMaterial(spec.color);
+    return _ret = _this.createMesh(spec.x, spec.y, geometry, material), babelHelpers.possibleConstructorReturn(_this, _ret);
+  }
+
+  return Disk;
+}(Objects);
+// * ***********************************************************************
+// *
+// *  ARC CLASS
+// *
+// *************************************************************************
+var Arc = function (_Objects2) {
+  babelHelpers.inherits(Arc, _Objects2);
+
+  function Arc(spec) {
+    var _ret2;
+
+    babelHelpers.classCallCheck(this, Arc);
+
+    var _this2 = babelHelpers.possibleConstructorReturn(this, _Objects2.call(this, spec));
+
+    spec.rotation = spec.rotation || 0;
+    spec.clockwise = spec.rotation || false;
+    spec.points = spec.points || 50;
+
+    var material = _this2.createLineMaterial(spec.color);
+    var curve = new THREE.EllipseCurve(spec.x, spec.y, spec.xRadius, spec.yRadius, spec.startAngle, spec.endAngle, spec.clockwise, spec.rotation);
+
+    var path = new THREE.Path(curve.getPoints(spec.points));
+    var geometry = path.createPointsGeometry(spec.points);
+    return _ret2 = new THREE.Line(geometry, material), babelHelpers.possibleConstructorReturn(_this2, _ret2);
+  }
+
+  return Arc;
+}(Objects);
+// * ***********************************************************************
+// *
+// * SPLINE CLASS
+// *
+// *************************************************************************
+var Spline = function (_Objects3) {
+  babelHelpers.inherits(Spline, _Objects3);
+
+  function Spline(spec) {
+    var _ret3;
+
+    babelHelpers.classCallCheck(this, Spline);
+
+    var _this3 = babelHelpers.possibleConstructorReturn(this, _Objects3.call(this, spec));
+
+    spec.points = spec.points || 50;
+    var material = _this3.createLineMaterial(spec.color);
+    var curve = new (Function.prototype.bind.apply(THREE.CubicBezierCurve3, [null].concat(spec.vectors)))();
+    var geometry = new THREE.Geometry();
+    geometry.vertices = curve.getPoints(spec.points);
+    //const path = new THREE.Path(curve.getPoints(spec.points));
+    //const geometry = path.createPointsGeometry(spec.points);
+    return _ret3 = new THREE.Line(geometry, material), babelHelpers.possibleConstructorReturn(_this3, _ret3);
+  }
+
+  return Spline;
+}(Objects);
+
+// * ***********************************************************************
+// *
+// * (logarithmic) SPIRAL CLASS
+// *
+// * Will start at screens edge and spiral towards the centre
+// *
+// *************************************************************************
+// spec = {
+//   a: 5, b: 2 // arbitrary constants
+// }
+var Spiral = function (_Objects4) {
+  babelHelpers.inherits(Spiral, _Objects4);
+
+  function Spiral(spec) {
+    var _ret4;
+
+    babelHelpers.classCallCheck(this, Spiral);
+
+    var _this4 = babelHelpers.possibleConstructorReturn(this, _Objects4.call(this, spec));
+
+    spec.points = spec.points || 50;
+
+    _this4.spec = spec;
+
+    return _ret4 = _this4.pointsTEST(), babelHelpers.possibleConstructorReturn(_this4, _ret4);
+  }
+
+  //calculate a point on the spiral using parametric equations
+
+
+  Spiral.prototype.point = function point(t) {
+    var r = this.spec.a * Math.exp(this.spec.b * t);
+    return {
+      x: xCoord(r * Math.cos(t) + 50),
+      y: yCoord(r * Math.sin(t) + 50)
+    };
+  };
+
+  //calculate the point at the edge of the screen
+
+
+  Spiral.prototype.firstPoint = function firstPoint() {
+    var edge = 90;
+    var theta = Math.log(edge / this.spec.a) / this.spec.b;
+    var hyp = edge / Math.cos(theta);
+    var y = yCoord(Math.sqrt(Math.pow(hyp, 2) - Math.pow(edge, 2)));
+    var x = xCoord(edge);
+    return new Disk({
+      x: x,
+      y: y,
+      radius: 20,
+      color: 0xff0000
+    });
+  };
+
+  //calculate a set of points along the spiral
+
+
+  Spiral.prototype.spacedPoints = function spacedPoints() {
+    var points = [];
+    for (var i = 100; i > 0; i -= 1) {
+      var theta = Math.log(i / this.spec.a) / this.spec.b;
+      var hyp = i / Math.cos(theta);
+      var y = yCoord(Math.sqrt(Math.pow(hyp, 2) - Math.pow(i, 2)));
+      var x = xCoord(i);
+      points.push(new Disk({
+        x: x,
+        y: y,
+        radius: 2,
+        color: 0xfffff
+      }));
+    }
+    return {
+      points: points
+    };
+  };
+
+  //return an array of disk objects along the spiral
+
+
+  Spiral.prototype.pointsTEST = function pointsTEST() {
+    var points = [];
+    var vectors = [];
+    for (var i = 200; i > 0; i--) {
+      var pt = this.point(i / 2);
+      points.push(new Disk({
+        radius: 1,
+        x: pt.x, //adding 50 here centres the spiral
+        y: pt.y
+      }));
+      vectors.push(new THREE.Vector3(pt.x, pt.y, 0));
+    }
+
+    var curve = new THREE.CatmullRomCurve3(vectors);
+    var path = new THREE.Path(curve.getPoints(300));
+    var geometry = path.createPointsGeometry(300);
+    var material = this.createLineMaterial(0xffffff);
+    return {
+      firstPoint: this.firstPoint(),
+      points: points,
+      curve: new THREE.Line(geometry, material)
+    };
+  };
+
+  return Spiral;
+}(Objects);
 
 // * ***********************************************************************
 // *
@@ -384,9 +558,31 @@ var Drawing = function () {
   }
 
   Drawing.prototype.test = function test() {
-    var centre = new Point(0, 0);
-    var circle = new Circle(centre, 100);
-    this.renderer.disk(circle);
+    var spiral = new Spiral({
+      //a: randomFloat(0.1, 0.8),
+      //b: randomFloat(0.3, 0.8),
+      a: 0.3,
+      b: 0.5
+    });
+
+    for (var _iterator = spiral.points, _isArray = Array.isArray(_iterator), _i = 0, _iterator = _isArray ? _iterator : _iterator[Symbol.iterator]();;) {
+      var _ref;
+
+      if (_isArray) {
+        if (_i >= _iterator.length) break;
+        _ref = _iterator[_i++];
+      } else {
+        _i = _iterator.next();
+        if (_i.done) break;
+        _ref = _i.value;
+      }
+
+      var point = _ref;
+
+      this.renderer.add(point);
+    }
+    //console.log(spiral.firstPoint);
+    //this.renderer.add(spiral.firstPoint);
   };
 
   return Drawing;
@@ -411,6 +607,9 @@ var Controller = function () {
 
   Controller.prototype.init = function init() {
     this.renderer.render();
+    //This will use GSAP rAF instead of THREE.js
+    //also remove request animation frame from render function!
+    //TweenMax.ticker.addEventListener('tick', () => this.renderer.render());
   };
 
   Controller.prototype.onResize = function onResize() {};

@@ -28,6 +28,9 @@ export class Controller {
 
   init() {
     this.renderer.render();
+    //This will use GSAP rAF instead of THREE.js
+    //also remove request animation frame from render function!
+    //TweenMax.ticker.addEventListener('tick', () => this.renderer.render());
   }
 
   onResize() {

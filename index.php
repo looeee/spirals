@@ -13,9 +13,9 @@
     <!--
     <link href='https://fonts.googleapis.com/css?family=Roboto:400,700,900' rel='stylesheet' type='text/css'>
     <script src="//cdn.jsdelivr.net/lodash/4.6.1/lodash.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.18.2/TweenMax.min.js"></script>
     <script src="node_modules/whatwg-fetch/fetch.js"></script>
     -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.18.2/TweenMax.min.js"></script>
     <script src="node_modules/three/three.js"></script>
     <script src="scripts/vendor/stats.min.js"></script>
 

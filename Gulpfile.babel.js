@@ -1,4 +1,4 @@
-const projectname = '3d-playground';
+const projectname = 'Spirals';
 const templatePath = '';
 const scssPath = `${templatePath}scss/**/*.scss`;
 const es2015Path = `${templatePath}es2015/`;
