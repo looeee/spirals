@@ -171,11 +171,7 @@ var Renderer = function () {
   };
 
   Renderer.prototype.render = function render() {
-    var _this2 = this;
-
-    window.requestAnimationFrame(function () {
-      return _this2.render();
-    });
+    //window.requestAnimationFrame(() => this.render());
     if (this.stats) this.stats.update();
     this.renderer.render(this.scene, this.camera);
   };
@@ -301,6 +297,14 @@ var LayoutController = function () {
   return LayoutController;
 }();
 
+var randomFloat = function (min, max) {
+  return Math.random() * (max - min) + min;
+};
+
+var randomInt = function (min, max) {
+  return Math.floor(Math.random() * (max - min + 1) + min);
+};
+
 //The following three functions convert values from percentages starting at
 //(0,0) bottom left to (100,100) top right screen coords
 var xPercent = window.innerWidth / 100;
@@ -323,17 +327,18 @@ var Objects = function () {
     babelHelpers.classCallCheck(this, Objects);
 
     spec.color = spec.color || 0xffffff;
+    this.spec = spec;
   }
 
-  Objects.prototype.createMeshMaterial = function createMeshMaterial(color) {
+  Objects.prototype.createMeshMaterial = function createMeshMaterial() {
     return new THREE.MeshBasicMaterial({
-      color: color
+      color: this.spec.color
     });
   };
 
-  Objects.prototype.createLineMaterial = function createLineMaterial(color) {
+  Objects.prototype.createLineMaterial = function createLineMaterial() {
     return new THREE.LineBasicMaterial({
-      color: color
+      color: this.spec.color
     });
   };
 
@@ -448,17 +453,14 @@ var Spiral = function (_Objects4) {
   babelHelpers.inherits(Spiral, _Objects4);
 
   function Spiral(spec) {
-    var _ret4;
-
     babelHelpers.classCallCheck(this, Spiral);
 
     var _this4 = babelHelpers.possibleConstructorReturn(this, _Objects4.call(this, spec));
 
     spec.points = spec.points || 50;
 
-    _this4.spec = spec;
-
-    return _ret4 = _this4.pointsTEST(), babelHelpers.possibleConstructorReturn(_this4, _ret4);
+    _this4.pointsAlongSpiral = _this4.points(spec.direction, spec.limit, spec.density);
+    return _this4;
   }
 
   //calculate a point on the spiral using parametric equations
@@ -472,74 +474,65 @@ var Spiral = function (_Objects4) {
     };
   };
 
-  //calculate the point at the edge of the screen
+  //return an array of vector objects along the spiral
 
 
-  Spiral.prototype.firstPoint = function firstPoint() {
-    var edge = 90;
-    var theta = Math.log(edge / this.spec.a) / this.spec.b;
-    var hyp = edge / Math.cos(theta);
-    var y = yCoord(Math.sqrt(Math.pow(hyp, 2) - Math.pow(edge, 2)));
-    var x = xCoord(edge);
-    return new Disk({
-      x: x,
-      y: y,
-      radius: 20,
-      color: 0xff0000
-    });
-  };
+  Spiral.prototype.points = function points() {
+    var direction = arguments.length <= 0 || arguments[0] === undefined ? 'to-centre' : arguments[0];
+    var limit = arguments.length <= 1 || arguments[1] === undefined ? 50 : arguments[1];
+    var density = arguments.length <= 2 || arguments[2] === undefined ? 0.5 : arguments[2];
 
-  //calculate a set of points along the spiral
-
-
-  Spiral.prototype.spacedPoints = function spacedPoints() {
-    var points = [];
-    for (var i = 100; i > 0; i -= 1) {
-      var theta = Math.log(i / this.spec.a) / this.spec.b;
-      var hyp = i / Math.cos(theta);
-      var y = yCoord(Math.sqrt(Math.pow(hyp, 2) - Math.pow(i, 2)));
-      var x = xCoord(i);
-      points.push(new Disk({
-        x: x,
-        y: y,
-        radius: 2,
-        color: 0xfffff
-      }));
-    }
-    return {
-      points: points
-    };
-  };
-
-  //return an array of disk objects along the spiral
-
-
-  Spiral.prototype.pointsTEST = function pointsTEST() {
-    var points = [];
     var vectors = [];
-    for (var i = 200; i > 0; i--) {
-      var pt = this.point(i / 2);
-      points.push(new Disk({
-        radius: 1,
-        x: pt.x, //adding 50 here centres the spiral
-        y: pt.y
-      }));
-      vectors.push(new THREE.Vector3(pt.x, pt.y, 0));
+    if (direction === 'to-centre') {
+      for (var i = limit; i > 0; i--) {
+        var pt = this.point(i * density);
+        vectors.push(new THREE.Vector3(pt.x, pt.y, 0));
+      }
+    } else {
+      for (var _i = 0; _i < limit; _i++) {
+        var _pt = this.point(_i * density);
+        vectors.push(new THREE.Vector3(_pt.x, _pt.y, 0));
+      }
     }
 
-    var curve = new THREE.CatmullRomCurve3(vectors);
-    var path = new THREE.Path(curve.getPoints(300));
-    var geometry = path.createPointsGeometry(300);
-    var material = this.createLineMaterial(0xffffff);
-    return {
-      firstPoint: this.firstPoint(),
-      points: points,
-      curve: new THREE.Line(geometry, material)
-    };
+    return vectors;
   };
 
   return Spiral;
 }(Objects);
+
+// * ***********************************************************************
+// *
+// * WIGGLY SPIRAL CLASS
+// *
+// * Extends spiral class by joins points with cubic beziers
+// *
+// *************************************************************************
+var WigglySpiral = function (_Spiral) {
+  babelHelpers.inherits(WigglySpiral, _Spiral);
+
+  function WigglySpiral(spec) {
+    babelHelpers.classCallCheck(this, WigglySpiral);
+
+    var _this5 = babelHelpers.possibleConstructorReturn(this, _Spiral.call(this, spec));
+
+    _this5.wigglyCurve();
+    return _this5;
+  }
+
+  WigglySpiral.prototype.wigglyCurve = function wigglyCurve() {
+    this.curves = [];
+    for (var i = 0; i < this.pointsAlongSpiral.length - 1; i++) {
+      var curve = new THREE.CubicBezierCurve3(new THREE.Vector3(this.pointsAlongSpiral[i].x, this.pointsAlongSpiral[i].y, 0), new THREE.Vector3(-5, 15, 0), new THREE.Vector3(20, 15, 0), new THREE.Vector3(this.pointsAlongSpiral[i + 1].x, this.pointsAlongSpiral[i + 1].y, 0));
+      geometry = new THREE.Geometry();
+      geometry.vertices = curve.getPoints(50);
+      var material = this.createLineMaterial();
+      this.curves.push(new THREE.Line(geometry, material));
+    }
+  };
+
+  return WigglySpiral;
+}(Spiral);
 
 // * ***********************************************************************
 // *
@@ -557,15 +550,15 @@ var Drawing = function () {
     this.test();
   }
 
-  Drawing.prototype.test = function test() {
-    var spiral = new Spiral({
-      //a: randomFloat(0.1, 0.8),
-      //b: randomFloat(0.3, 0.8),
-      a: 0.3,
-      b: 0.5
+  Drawing.prototype.drawSpiral = function drawSpiral() {
+    var spiral = new WigglySpiral({
+      a: randomFloat(0.1, 0.8),
+      b: randomFloat(0.3, 0.8),
+      color: randomInt(0x400000, 0xffffff)
     });
-
-    for (var _iterator = spiral.points, _isArray = Array.isArray(_iterator), _i = 0, _iterator = _isArray ? _iterator : _iterator[Symbol.iterator]();;) {
+    //a: 0.3,
+    //b: 0.5,
+    for (var _iterator = spiral.curves, _isArray = Array.isArray(_iterator), _i = 0, _iterator = _isArray ? _iterator : _iterator[Symbol.iterator]();;) {
       var _ref;
 
       if (_isArray) {
@@ -577,12 +570,16 @@ var Drawing = function () {
         _ref = _i.value;
       }
 
-      var point = _ref;
+      var curve = _ref;
 
-      this.renderer.add(point);
+      this.renderer.add(curve);
     }
-    //console.log(spiral.firstPoint);
-    //this.renderer.add(spiral.firstPoint);
+  };
+
+  Drawing.prototype.test = function test() {
+    for (var i = 0; i < 1; i++) {
+      this.drawSpiral();
+    }
   };
 
   return Drawing;
@@ -606,10 +603,14 @@ var Controller = function () {
   }
 
   Controller.prototype.init = function init() {
-    this.renderer.render();
+    var _this = this;
+
+    //this.renderer.render();
     //This will use GSAP rAF instead of THREE.js
     //also remove request animation frame from render function!
-    //TweenMax.ticker.addEventListener('tick', () => this.renderer.render());
+    TweenMax.ticker.addEventListener('tick', function () {
+      return _this.renderer.render();
+    });
   };
 
   Controller.prototype.onResize = function onResize() {};
@@ -618,13 +619,13 @@ var Controller = function () {
 
 
   Controller.prototype.saveImageButtons = function saveImageButtons() {
-    var _this = this;
+    var _this2 = this;
 
     document.querySelector('#save-image').onclick = function () {
-      return _this.render.saveImage();
+      return _this2.render.saveImage();
     };
     document.querySelector('#download-image').onclick = function () {
-      return _this.render.downloadImage();
+      return _this2.render.downloadImage();
     };
   };
 

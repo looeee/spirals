@@ -1,10 +1,11 @@
-import { randomFloat } from './universal/mathFunctions';
+import { randomFloat, randomInt } from './universal/mathFunctions';
 //import { Point, Circle } from './universal/universalElements';
 import {
   Arc,
   Disk,
   Spline,
   Spiral,
+  WigglySpiral,
 }
 from './objects';
 import {
@@ -28,18 +29,22 @@ export class Drawing {
     this.test();
   }
 
-  test() {
-    const spiral = new Spiral({
-      //a: randomFloat(0.1, 0.8),
-      //b: randomFloat(0.3, 0.8),
-      a: 0.3,
-      b: 0.5,
+  drawSpiral() {
+    const spiral = new WigglySpiral({
+      a: randomFloat(0.1, 0.8),
+      b: randomFloat(0.3, 0.8),
+      color: randomInt(0x400000, 0xffffff),
+      //a: 0.3,
+      //b: 0.5,
     });
-
-    for (const point of spiral.points) {
-      this.renderer.add(point);
+    for (const curve of spiral.curves) {
+      this.renderer.add(curve);
     }
-    //console.log(spiral.firstPoint);
-    //this.renderer.add(spiral.firstPoint);
+  }
+
+  test() {
+    for (let i = 0; i < 1; i++) {
+      this.drawSpiral();
+    }
   }
 }

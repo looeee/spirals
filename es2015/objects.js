@@ -12,17 +12,18 @@ from './utility';
 class Objects {
   constructor(spec) {
     spec.color = spec.color || 0xffffff;
+    this.spec = spec;
   }
 
-  createMeshMaterial(color) {
+  createMeshMaterial() {
     return new THREE.MeshBasicMaterial({
-      color,
+      color: this.spec.color,
     });
   }
 
-  createLineMaterial(color) {
+  createLineMaterial() {
     return new THREE.LineBasicMaterial({
-      color,
+      color: this.spec.color,
     });
   }
 
@@ -114,9 +115,7 @@ export class Spiral extends Objects {
     super(spec);
     spec.points = spec.points || 50;
 
-    this.spec = spec;
-
-    return this.pointsTEST();
+    this.pointsAlongSpiral = this.points(spec.direction, spec.limit, spec.density);
   }
 
   //calculate a point on the spiral using parametric equations
@@ -128,68 +127,52 @@ export class Spiral extends Objects {
     };
   }
 
-  //calculate the point at the edge of the screen
-  firstPoint() {
-    const edge = 90;
-    const theta = Math.log(edge / this.spec.a) / this.spec.b;
-    const hyp = edge / Math.cos(theta);
-    const y = yCoord(Math.sqrt(Math.pow(hyp, 2) - Math.pow(edge, 2)));
-    const x = xCoord(edge);
-    return new Disk({
-      x,
-      y,
-      radius: 20,
-      color: 0xff0000,
-    });
-  }
-
-  //calculate a set of points along the spiral
-  spacedPoints() {
-    const points = [];
-    for (let i = 100; i > 0; i -= 1) {
-      const theta = Math.log(i / this.spec.a) / this.spec.b;
-      const hyp = i / Math.cos(theta);
-      const y = yCoord(Math.sqrt(Math.pow(hyp, 2) - Math.pow(i, 2)));
-      const x = xCoord(i);
-      points.push(
-        new Disk({
-          x,
-          y,
-          radius: 2,
-          color: 0xfffff,
-        })
-      );
-    }
-    return {
-      points,
-    };
-  }
-
-
-  //return an array of disk objects along the spiral
-  pointsTEST() {
-    const points = [];
+  //return an array of vector objects along the spiral
+  points(direction = 'to-centre', limit = 50, density = 0.5) {
     const vectors = [];
-    for (let i = 200; i > 0; i--) {
-      const pt = this.point(i / 2);
-      points.push(
-        new Disk({
-          radius: 1,
-          x: pt.x, //adding 50 here centres the spiral
-          y: pt.y,
-        })
-      );
-      vectors.push(new THREE.Vector3(pt.x, pt.y, 0));
+    if (direction === 'to-centre') {
+      for (let i = limit; i > 0; i--) {
+        const pt = this.point(i * density);
+        vectors.push(new THREE.Vector3(pt.x, pt.y, 0));
+      }
+    }
+    else {
+      for (let i = 0; i < limit; i++) {
+        const pt = this.point(i * density);
+        vectors.push(new THREE.Vector3(pt.x, pt.y, 0));
+      }
     }
 
-    const curve = new THREE.CatmullRomCurve3(vectors);
-    const path = new THREE.Path(curve.getPoints(300));
-    const geometry = path.createPointsGeometry(300);
-    const material = this.createLineMaterial(0xffffff);
-    return {
-      firstPoint: this.firstPoint(),
-      points,
-      curve: new THREE.Line(geometry, material),
-    };
+    return vectors;
+  }
+}
+
+// * ***********************************************************************
+// *
+// * WIGGLY SPIRAL CLASS
+// *
+// * Extends spiral class by joins points with cubic beziers
+// *
+// *************************************************************************
+export class WigglySpiral extends Spiral {
+  constructor(spec) {
+    super(spec);
+    this.wigglyCurve();
+  }
+
+  wigglyCurve() {
+    this.curves = [];
+    for (let i = 0; i < this.pointsAlongSpiral.length - 1; i++) {
+      const curve = new THREE.CubicBezierCurve3(
+        new THREE.Vector3(this.pointsAlongSpiral[i].x, this.pointsAlongSpiral[i].y, 0),
+        new THREE.Vector3(-5, 15, 0),
+        new THREE.Vector3(20, 15, 0),
+        new THREE.Vector3(this.pointsAlongSpiral[i + 1].x, this.pointsAlongSpiral[i + 1].y, 0)
+      );
+      geometry = new THREE.Geometry();
+      geometry.vertices = curve.getPoints(50);
+      const material = this.createLineMaterial();
+      this.curves.push(new THREE.Line(geometry, material));
+    }
   }
 }
